@@ -48,10 +48,57 @@ namespace demowebapi.Controllers
                 IsAvailable = true,
                 CatId = 2
             }
+
         };
 
-        // GET ALL PRODUCTS
+        // UPDATE PRODUCT
+        [HttpPut("{pid}")]
+        public ActionResult<ProductDTO> UpdateProduct(int pid, ProductUpdateDTO product)
+        {
+            var existing = _products.FirstOrDefault(p => p.ProductId == pid);
+
+            if (existing == null)
+            {
+                return NotFound(new { Message = "Product Not Found" });
+            }
+
+            // update fields
+            existing.ProductName = product.ProductName;
+            existing.ProductDescription = product.ProductDescription;
+            existing.ProductPrice = product.ProductPrice;
+            existing.IsAvailable = product.IsAvailable;
+            existing.CatId = product.CatId;
+
+            var pDTO = new ProductDTO
+            {
+                ProductId = existing.ProductId,
+                ProductName = existing.ProductName,
+                ProductPrice = existing.ProductPrice,
+                CatId = existing.CatId,
+                IsAvailable = existing.IsAvailable,
+                ProductDescription = existing.ProductDescription
+            };
+
+            return Ok(pDTO);
+        }
+
+        // DELETE PRODUCT
+        [HttpDelete("{pid}")]
+        public ActionResult DeleteProduct(int pid)
+        {
+            var existing = _products.FirstOrDefault(p => p.ProductId == pid);
+
+            if (existing == null)
+            {
+                return NotFound(new { Message = "Product Not Found" });
+            }
+
+            _products.Remove(existing);
+
+            return NoContent();
+        }
         [HttpGet]
+        // GET ALL PRODUCTS
         public ActionResult<IEnumerable<Product>> GetProducts()
         {
             return Ok(_products);
