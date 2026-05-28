@@ -1,6 +1,7 @@
 using demowebapi.Models;
 using Microsoft.AspNetCore.Mvc;
 using webapidemo.DTOs;
+using demowebapi.Services;
 
 namespace demowebapi.Controllers
 {
@@ -8,37 +9,38 @@ namespace demowebapi.Controllers
     [ApiController]
     public class CategoriesController : ControllerBase
     {
-        private readonly List<Category> _categories = new List<Category>
+        private readonly ICategoryService _categoryService;
+
+        public CategoriesController(ICategoryService categoryService)
         {
-            new Category { CatId = 1, CategoryName = "Electronics" },
-            new Category { CatId = 2, CategoryName = "Accessories" },
-            new Category { CatId = 3, CategoryName = "Fashion" }
-        };
+            _categoryService = categoryService;
+        }
 
         // GET ALL CATEGORIES
         [HttpGet]
-        public ActionResult<IEnumerable<Category>> GetCategories()
+        public ActionResult<IEnumerable<CategoryDTO>> GetCategories()
         {
-            return Ok(_categories);
+            var categories = _categoryService.GetAll()
+                .Select(c => new CategoryDTO { CatId = c.CatId, CategoryName = c.CategoryName });
+
+            return Ok(categories);
         }
 
         // UPDATE CATEGORY
         [HttpPut("{cid}")]
         public ActionResult<CategoryDTO> UpdateCategory(int cid, CategoryUpdateDTO category)
         {
-            var existing = _categories.FirstOrDefault(c => c.CatId == cid);
+            var updated = _categoryService.Update(cid, new Category { CategoryName = category.CategoryName });
 
-            if (existing == null)
+            if (updated == null)
             {
                 return NotFound(new { Message = "Category Not Found" });
             }
 
-            existing.CategoryName = category.CategoryName;
-
             var cDTO = new CategoryDTO
             {
-                CatId = existing.CatId,
-                CategoryName = existing.CategoryName
+                CatId = updated.CatId,
+                CategoryName = updated.CategoryName
             };
 
             return Ok(cDTO);
@@ -48,50 +50,41 @@ namespace demowebapi.Controllers
         [HttpDelete("{cid}")]
         public ActionResult DeleteCategory(int cid)
         {
-            var existing = _categories.FirstOrDefault(c => c.CatId == cid);
+            var deleted = _categoryService.Delete(cid);
 
-            if (existing == null)
+            if (!deleted)
             {
                 return NotFound(new { Message = "Category Not Found" });
             }
-
-            _categories.Remove(existing);
 
             return NoContent();
         }
 
         // GET CATEGORY BY ID
         [HttpGet("{cid}")]
-        public ActionResult<Category> GetCategoryById(int cid)
+        public ActionResult<CategoryDTO> GetCategoryById(int cid)
         {
-            var category = _categories.FirstOrDefault(c => c.CatId == cid);
+            var category = _categoryService.GetById(cid);
 
             if (category == null)
             {
-                return NotFound(new
-                {
-                    Message = "Category Not Found"
-                });
+                return NotFound(new { Message = "Category Not Found" });
             }
-            return Ok(category);
+
+            return Ok(new CategoryDTO { CatId = category.CatId, CategoryName = category.CategoryName });
         }
 
         // ADD CATEGORY
         [HttpPost]
         public ActionResult<CategoryDTO> AddCategory(CategoryCreateDTO category)
         {
-            var newCategory = new Category
-            {
-                CatId = _categories.Max(c => c.CatId + 1),
-                CategoryName = category.CategoryName
-            };
-
-            _categories.Add(newCategory);
+            var newCategory = new Category { CategoryName = category.CategoryName };
+            var added = _categoryService.Add(newCategory);
 
             var cDTO = new CategoryDTO
             {
-                CatId = newCategory.CatId,
-                CategoryName = newCategory.CategoryName
+                CatId = added.CatId,
+                CategoryName = added.CategoryName
             };
 
             return CreatedAtAction(nameof(GetCategoryById), new { cid = cDTO.CatId }, cDTO);

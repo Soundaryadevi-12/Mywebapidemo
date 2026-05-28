@@ -1,6 +1,7 @@
 ﻿using demowebapi.Models;
 using Microsoft.AspNetCore.Mvc;
 using webapidemo.DTOs;
+using demowebapi.Services;
 
 namespace demowebapi.Controllers
 {
@@ -8,54 +9,18 @@ namespace demowebapi.Controllers
     [ApiController]
     public class ProductsController : ControllerBase
     {
-        // Category List
-        private readonly List<Category> _categories = new List<Category>
+        private readonly IProductService _productService;
+
+        public ProductsController(IProductService productService)
         {
-            new Category { CatId = 1, CategoryName = "Electronics" },
-            new Category { CatId = 2, CategoryName = "Accessories" },
-            new Category { CatId = 3, CategoryName = "Fashion" }
-        };
-
-        // Product List
-        private readonly List<Product> _products = new()
-        {
-            new Product
-            {
-                ProductId = 101,
-                ProductName = "Laptop",
-                ProductDescription = "Dell Laptop",
-                ProductPrice = 90000,
-                IsAvailable = true,
-                CatId = 1
-            },
-
-            new Product
-            {
-                ProductId = 102,
-                ProductName = "Mobile",
-                ProductDescription = "Samsung Mobile",
-                ProductPrice = 25000,
-                IsAvailable = true,
-                CatId = 1
-            },
-
-            new Product
-            {
-                ProductId = 103,
-                ProductName = "Headphones",
-                ProductDescription = "Boat Headphones",
-                ProductPrice = 2000,
-                IsAvailable = true,
-                CatId = 2
-            }
-
-        };
+            _productService = productService;
+        }
 
         // UPDATE PRODUCT
         [HttpPut("{pid}")]
         public ActionResult<ProductDTO> UpdateProduct(int pid, ProductUpdateDTO product)
         {
-            var existing = _products.FirstOrDefault(p => p.ProductId == pid);
+            var existing = _productService.GetById(pid);
 
             if (existing == null)
             {
@@ -86,29 +51,40 @@ namespace demowebapi.Controllers
         [HttpDelete("{pid}")]
         public ActionResult DeleteProduct(int pid)
         {
-            var existing = _products.FirstOrDefault(p => p.ProductId == pid);
+            var existing = _productService.GetById(pid);
 
             if (existing == null)
             {
                 return NotFound(new { Message = "Product Not Found" });
             }
 
-            _products.Remove(existing);
+            _productService.Delete(pid);
 
             return NoContent();
         }
         [HttpGet]
         // GET ALL PRODUCTS
-        public ActionResult<IEnumerable<Product>> GetProducts()
+        public ActionResult<IEnumerable<ProductDTO>> GetProducts()
         {
-            return Ok(_products);
+            var products = _productService.GetAll()
+                .Select(p => new ProductDTO
+                {
+                    ProductId = p.ProductId,
+                    ProductName = p.ProductName,
+                    ProductDescription = p.ProductDescription,
+                    ProductPrice = p.ProductPrice,
+                    IsAvailable = p.IsAvailable,
+                    CatId = p.CatId
+                });
+
+            return Ok(products);
         }
 
         // GET PRODUCT BY ID
         [HttpGet("{pid}")]
         public ActionResult<Product> GetProductById(int pid)
         {
-            var product = _products.FirstOrDefault(p => p.ProductId == pid);
+            var product = _productService.GetById(pid);
 
             if (product == null)
             {
@@ -121,13 +97,66 @@ namespace demowebapi.Controllers
             return Ok(product);
         }
 
+        ////Multiple Route Parameters
+        ////2 parameters: price and availability
+        //[Route("api/[controller]")]
+        //[HttpGet("Price/{pPrice}/Avail/{pAvail}")]
+        //public ActionResult<IEnumerable<Product>> GetProdPriceAvail(decimal pPrice, bool pAvail)
+        //{
+        //    var filterProd = _products
+        //        .Where(p => p.ProductPrice >= pPrice && p.IsAvailable == pAvail)
+        //        .ToList();
+
+        //    if (!filterProd.Any())
+        //        return NotFound();
+
+        //    return Ok(filterProd);
+        //}
+
+        ////3 parameters: price, availability and category id which returns product object
+        //[Route("api/[controller]")]
+        //[HttpGet("Price/{ProductPrice}/Avail/{IsAvailable}/CategoryId/{CatId}")]
+        //public ActionResult<IEnumerable<Product>> GetProdPriceAvailCatId(decimal ProductPrice, bool IsAvailable, int CatId)
+        //{
+        //    var filterProd = _products
+        //        .Where(p => p.ProductPrice >= ProductPrice && p.IsAvailable == IsAvailable && p.CatId == CatId)
+        //        .ToList();
+
+        //    if (!filterProd.Any())
+        //        return NotFound();
+
+        //    return Ok(filterProd);
+        //}
+        ////3 parameters: price, availability and category id which returns productDTO
+        //[Route("api/[controller]")]
+        //[HttpGet("Price/{ProductPrice}/Avail/{IsAvailable}/CategoryId/{CatId}")]
+        //public ActionResult<IEnumerable<ProductDTO>> GetProdPriceAvailCatId(decimal ProductPrice, bool IsAvailable, int CatId)
+        //{
+        //    var filterProd = _products
+        //        .Where(p => p.ProductPrice >= ProductPrice && p.IsAvailable == IsAvailable && p.CatId == CatId)
+        //        .Select(p => new ProductDTO
+        //        {
+        //            ProductId = p.ProductId,
+        //            ProductName = p.ProductName,
+        //            ProductDescription = p.ProductDescription,
+        //            ProductPrice = p.ProductPrice,
+        //            IsAvailable = p.IsAvailable,
+        //            CatId = p.CatId
+        //        })
+        //        .ToList();
+
+        //    if (!filterProd.Any())
+        //        return NotFound();
+
+        //    return Ok(filterProd);
+        //}
+
         // ADD PRODUCT
         [HttpPost]
         public ActionResult<ProductDTO> AddProduct(ProductCreateDTO product)
         {
             var newproduct = new Product
             {
-                ProductId = _products.Max(p => p.ProductId + 1),
                 ProductName = product.ProductName,
                 ProductPrice = product.ProductPrice,
                 CatId = product.CatId,
@@ -135,16 +164,16 @@ namespace demowebapi.Controllers
                 ProductDescription = product.ProductDescription
             };
 
-            _products.Add(newproduct);
+            var added = _productService.Add(newproduct);
 
             var pDTO = new ProductDTO
             {
-                ProductId = newproduct.ProductId,
-                ProductName = newproduct.ProductName,
-                ProductPrice = newproduct.ProductPrice,
-                CatId = newproduct.CatId,
-                IsAvailable = newproduct.IsAvailable,
-                ProductDescription = newproduct.ProductDescription
+                ProductId = added.ProductId,
+                ProductName = added.ProductName,
+                ProductPrice = added.ProductPrice,
+                CatId = added.CatId,
+                IsAvailable = added.IsAvailable,
+                ProductDescription = added.ProductDescription
             };
 
             return CreatedAtAction(nameof(GetProductById),
