@@ -1,45 +1,44 @@
 using demowebapi.Models;
+using Mywebapidemo.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace demowebapi.Services
 {
     public class CategoryService : ICategoryService
     {
-        private readonly List<Category> _categories;
+        private readonly AppDbContext _db;
 
-        public CategoryService()
+        public CategoryService(AppDbContext db)
         {
-            _categories = new List<Category>
-            {
-                new Category { CatId = 1, CategoryName = "Electronics" },
-                new Category { CatId = 2, CategoryName = "Accessories" },
-                new Category { CatId = 3, CategoryName = "Fashion" }
-            };
+            _db = db;
         }
 
-        public IEnumerable<Category> GetAll() => _categories;
+        public async Task<IEnumerable<Category>> GetAllAsync() => await _db.Categories.ToListAsync();
 
-        public Category? GetById(int id) => _categories.FirstOrDefault(c => c.CatId == id);
+        public async Task<Category?> GetByIdAsync(int id) => await _db.Categories.FirstOrDefaultAsync(c => c.CatId == id);
 
-        public Category Add(Category category)
+        public async Task<Category> AddAsync(Category category)
         {
-            category.CatId = _categories.Any() ? _categories.Max(c => c.CatId) + 1 : 1;
-            _categories.Add(category);
+            await _db.Categories.AddAsync(category);
+            await _db.SaveChangesAsync();
             return category;
         }
 
-        public Category? Update(int id, Category category)
+        public async Task<Category?> UpdateAsync(int id, Category category)
         {
-            var existing = GetById(id);
+            var existing = await GetByIdAsync(id);
             if (existing == null) return null;
             existing.CategoryName = category.CategoryName;
+            await _db.SaveChangesAsync();
             return existing;
         }
 
-        public bool Delete(int id)
+        public async Task<bool> DeleteAsync(int id)
         {
-            var existing = GetById(id);
+            var existing = await GetByIdAsync(id);
             if (existing == null) return false;
-            _categories.Remove(existing);
+            _db.Categories.Remove(existing);
+            await _db.SaveChangesAsync();
             return true;
         }
     }

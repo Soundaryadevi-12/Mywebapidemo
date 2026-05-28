@@ -18,9 +18,9 @@ namespace demowebapi.Controllers
 
         // GET ALL CATEGORIES
         [HttpGet]
-        public ActionResult<IEnumerable<CategoryDTO>> GetCategories()
+        public async Task<ActionResult<IEnumerable<CategoryDTO>>> GetCategories()
         {
-            var categories = _categoryService.GetAll()
+            var categories = (await _categoryService.GetAllAsync())
                 .Select(c => new CategoryDTO { CatId = c.CatId, CategoryName = c.CategoryName });
 
             return Ok(categories);
@@ -28,29 +28,25 @@ namespace demowebapi.Controllers
 
         // UPDATE CATEGORY
         [HttpPut("{cid}")]
-        public ActionResult<CategoryDTO> UpdateCategory(int cid, CategoryUpdateDTO category)
+        public async Task<ActionResult<CategoryDTO>> UpdateCategory(int cid, CategoryUpdateDTO category)
         {
-            var updated = _categoryService.Update(cid, new Category { CategoryName = category.CategoryName });
+            var updated = await _categoryService.UpdateAsync(cid, new Category { CategoryName = category.CategoryName });
 
             if (updated == null)
             {
                 return NotFound(new { Message = "Category Not Found" });
             }
 
-            var cDTO = new CategoryDTO
-            {
-                CatId = updated.CatId,
-                CategoryName = updated.CategoryName
-            };
+            var cDTO = new CategoryDTO { CatId = updated.CatId, CategoryName = updated.CategoryName };
 
             return Ok(cDTO);
         }
 
         // DELETE CATEGORY
         [HttpDelete("{cid}")]
-        public ActionResult DeleteCategory(int cid)
+        public async Task<ActionResult> DeleteCategory(int cid)
         {
-            var deleted = _categoryService.Delete(cid);
+            var deleted = await _categoryService.DeleteAsync(cid);
 
             if (!deleted)
             {
@@ -62,9 +58,9 @@ namespace demowebapi.Controllers
 
         // GET CATEGORY BY ID
         [HttpGet("{cid}")]
-        public ActionResult<CategoryDTO> GetCategoryById(int cid)
+        public async Task<ActionResult<CategoryDTO>> GetCategoryById(int cid)
         {
-            var category = _categoryService.GetById(cid);
+            var category = await _categoryService.GetByIdAsync(cid);
 
             if (category == null)
             {
@@ -76,16 +72,12 @@ namespace demowebapi.Controllers
 
         // ADD CATEGORY
         [HttpPost]
-        public ActionResult<CategoryDTO> AddCategory(CategoryCreateDTO category)
+        public async Task<ActionResult<CategoryDTO>> AddCategory(CategoryCreateDTO category)
         {
             var newCategory = new Category { CategoryName = category.CategoryName };
-            var added = _categoryService.Add(newCategory);
+            var added = await _categoryService.AddAsync(newCategory);
 
-            var cDTO = new CategoryDTO
-            {
-                CatId = added.CatId,
-                CategoryName = added.CategoryName
-            };
+            var cDTO = new CategoryDTO { CatId = added.CatId, CategoryName = added.CategoryName };
 
             return CreatedAtAction(nameof(GetCategoryById), new { cid = cDTO.CatId }, cDTO);
         }

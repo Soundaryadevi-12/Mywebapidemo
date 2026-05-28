@@ -3,12 +3,12 @@ namespace demowebapi.Services
 {
     public interface IProductService
     {
-        IEnumerable<Product> GetAll();
-        Product? GetById(int id);
-        Product Add(Product product);
-        Product? Update(int id, Product product);
-        bool Delete(int id);
-        IEnumerable<Product> GetByPriceAvail(decimal price, bool avail);
-        IEnumerable<Product> GetByPriceAvailCategory(decimal price, bool avail, int catId);
+        Task<IEnumerable<Product>> GetAllAsync();
+        Task<Product?> GetByIdAsync(int id);
+        Task<Product> AddAsync(Product product);
+        Task<Product?> UpdateAsync(int id, Product product);
+        Task<bool> DeleteAsync(int id);
+        Task<IEnumerable<Product>> GetByPriceAvailAsync(decimal price, bool avail);
+        Task<IEnumerable<Product>> GetByPriceAvailCategoryAsync(decimal price, bool avail, int catId);
     }
 }

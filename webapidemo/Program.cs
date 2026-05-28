@@ -12,8 +12,11 @@ namespace demowebapi
             // Add services to the container.
 
             builder.Services.AddControllers();
-            builder.Services.AddSingleton<demowebapi.Services.IProductService, demowebapi.Services.ProductService>();
-            builder.Services.AddSingleton<demowebapi.Services.ICategoryService, demowebapi.Services.CategoryService>();
+            builder.Services.AddDbContext<Mywebapidemo.Data.AppDbContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("constr")));
+
+            builder.Services.AddScoped<demowebapi.Services.IProductService, demowebapi.Services.ProductService>();
+            builder.Services.AddScoped<demowebapi.Services.ICategoryService, demowebapi.Services.CategoryService>();
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddSwaggerGen();
             builder.Services.AddDbContext<AppDbContext>(

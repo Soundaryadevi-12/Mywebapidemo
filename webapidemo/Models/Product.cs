@@ -4,7 +4,7 @@ namespace demowebapi.Models
 {
     public class Product
     {
-        [Required]
+        [Key]
         public int ProductId { get; set; } // PK
 
         [Required]

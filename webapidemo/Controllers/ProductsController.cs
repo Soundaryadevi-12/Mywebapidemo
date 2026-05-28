@@ -18,30 +18,32 @@ namespace demowebapi.Controllers
 
         // UPDATE PRODUCT
         [HttpPut("{pid}")]
-        public ActionResult<ProductDTO> UpdateProduct(int pid, ProductUpdateDTO product)
+        public async Task<ActionResult<ProductDTO>> UpdateProduct(int pid, ProductUpdateDTO product)
         {
-            var existing = _productService.GetById(pid);
+            var existing = await _productService.GetByIdAsync(pid);
 
             if (existing == null)
             {
                 return NotFound(new { Message = "Product Not Found" });
             }
 
-            // update fields
-            existing.ProductName = product.ProductName;
-            existing.ProductDescription = product.ProductDescription;
-            existing.ProductPrice = product.ProductPrice;
-            existing.IsAvailable = product.IsAvailable;
-            existing.CatId = product.CatId;
+            var updated = await _productService.UpdateAsync(pid, new Product
+            {
+                ProductName = product.ProductName,
+                ProductDescription = product.ProductDescription,
+                ProductPrice = product.ProductPrice,
+                IsAvailable = product.IsAvailable,
+                CatId = product.CatId
+            });
 
             var pDTO = new ProductDTO
             {
-                ProductId = existing.ProductId,
-                ProductName = existing.ProductName,
-                ProductPrice = existing.ProductPrice,
-                CatId = existing.CatId,
-                IsAvailable = existing.IsAvailable,
-                ProductDescription = existing.ProductDescription
+                ProductId = updated!.ProductId,
+                ProductName = updated.ProductName,
+                ProductPrice = updated.ProductPrice,
+                CatId = updated.CatId,
+                IsAvailable = updated.IsAvailable,
+                ProductDescription = updated.ProductDescription
             };
 
             return Ok(pDTO);
@@ -49,24 +51,22 @@ namespace demowebapi.Controllers
 
         // DELETE PRODUCT
         [HttpDelete("{pid}")]
-        public ActionResult DeleteProduct(int pid)
+        public async Task<ActionResult> DeleteProduct(int pid)
         {
-            var existing = _productService.GetById(pid);
+            var deleted = await _productService.DeleteAsync(pid);
 
-            if (existing == null)
+            if (!deleted)
             {
                 return NotFound(new { Message = "Product Not Found" });
             }
-
-            _productService.Delete(pid);
 
             return NoContent();
         }
         [HttpGet]
         // GET ALL PRODUCTS
-        public ActionResult<IEnumerable<ProductDTO>> GetProducts()
+        public async Task<ActionResult<IEnumerable<ProductDTO>>> GetProducts()
         {
-            var products = _productService.GetAll()
+            var products = (await _productService.GetAllAsync())
                 .Select(p => new ProductDTO
                 {
                     ProductId = p.ProductId,
@@ -82,19 +82,26 @@ namespace demowebapi.Controllers
 
         // GET PRODUCT BY ID
         [HttpGet("{pid}")]
-        public ActionResult<Product> GetProductById(int pid)
+        public async Task<ActionResult<ProductDTO>> GetProductById(int pid)
         {
-            var product = _productService.GetById(pid);
+            var product = await _productService.GetByIdAsync(pid);
 
             if (product == null)
             {
-                return NotFound(new
-                {
-                    Message = "Product Not Found"
-                });
+                return NotFound(new { Message = "Product Not Found" });
             }
 
-            return Ok(product);
+            var dto = new ProductDTO
+            {
+                ProductId = product.ProductId,
+                ProductName = product.ProductName,
+                ProductDescription = product.ProductDescription,
+                ProductPrice = product.ProductPrice,
+                IsAvailable = product.IsAvailable,
+                CatId = product.CatId
+            };
+
+            return Ok(dto);
         }
 
         ////Multiple Route Parameters
@@ -153,7 +160,7 @@ namespace demowebapi.Controllers
 
         // ADD PRODUCT
         [HttpPost]
-        public ActionResult<ProductDTO> AddProduct(ProductCreateDTO product)
+        public async Task<ActionResult<ProductDTO>> AddProduct(ProductCreateDTO product)
         {
             var newproduct = new Product
             {
@@ -164,7 +171,7 @@ namespace demowebapi.Controllers
                 ProductDescription = product.ProductDescription
             };
 
-            var added = _productService.Add(newproduct);
+            var added = await _productService.AddAsync(newproduct);
 
             var pDTO = new ProductDTO
             {
@@ -176,8 +183,7 @@ namespace demowebapi.Controllers
                 ProductDescription = added.ProductDescription
             };
 
-            return CreatedAtAction(nameof(GetProductById),
-                new { pid = pDTO.ProductId }, pDTO);
+            return CreatedAtAction(nameof(GetProductById), new { pid = pDTO.ProductId }, pDTO);
         }
     }
 }
