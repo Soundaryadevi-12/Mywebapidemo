@@ -18,6 +18,7 @@ namespace webapidemo.DTOs
         [Required]
         public bool IsAvailable { get; set; }
         public int CatId { get; set; }
+        public string? CategoryName { get; set; }
 
     }
 }

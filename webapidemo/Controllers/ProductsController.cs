@@ -43,7 +43,8 @@ namespace demowebapi.Controllers
                 ProductPrice = updated.ProductPrice,
                 CatId = updated.CatId,
                 IsAvailable = updated.IsAvailable,
-                ProductDescription = updated.ProductDescription
+                ProductDescription = updated.ProductDescription,
+                CategoryName = updated.Category?.CategoryName
             };
 
             return Ok(pDTO);
@@ -74,7 +75,8 @@ namespace demowebapi.Controllers
                     ProductDescription = p.ProductDescription,
                     ProductPrice = p.ProductPrice,
                     IsAvailable = p.IsAvailable,
-                    CatId = p.CatId
+                    CatId = p.CatId,
+                    CategoryName = p.Category?.CategoryName
                 });
 
             return Ok(products);
@@ -98,7 +100,8 @@ namespace demowebapi.Controllers
                 ProductDescription = product.ProductDescription,
                 ProductPrice = product.ProductPrice,
                 IsAvailable = product.IsAvailable,
-                CatId = product.CatId
+                CatId = product.CatId,
+                CategoryName = product.Category?.CategoryName
             };
 
             return Ok(dto);
@@ -180,7 +183,8 @@ namespace demowebapi.Controllers
                 ProductPrice = added.ProductPrice,
                 CatId = added.CatId,
                 IsAvailable = added.IsAvailable,
-                ProductDescription = added.ProductDescription
+                ProductDescription = added.ProductDescription,
+                CategoryName = added.Category?.CategoryName
             };
 
             return CreatedAtAction(nameof(GetProductById), new { pid = pDTO.ProductId }, pDTO);

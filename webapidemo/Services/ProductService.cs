@@ -13,41 +13,83 @@ namespace demowebapi.Services
             _db = db;
         }
 
-        public async Task<IEnumerable<Product>> GetAllAsync() => await _db.Products.ToListAsync();
+        public async Task<IEnumerable<Product>> GetAllAsync()
+        {
+            return await _db.Products
+                .Include(p => p.Category)
+                .ToListAsync();
+        }
 
-        public async Task<Product?> GetByIdAsync(int id) => await _db.Products.FirstOrDefaultAsync(p => p.ProductId == id);
+
+        public async Task<Product?> GetByIdAsync(int id)
+        {
+            return await _db.Products
+                .Include(p => p.Category)
+                .FirstOrDefaultAsync(p => p.ProductId == id);
+        }
 
         public async Task<Product> AddAsync(Product product)
         {
             await _db.Products.AddAsync(product);
             await _db.SaveChangesAsync();
-            return product;
+
+            // Reload with Category
+            return await _db.Products
+                .Include(p => p.Category)
+                .FirstAsync(p => p.ProductId == product.ProductId);
         }
 
         public async Task<Product?> UpdateAsync(int id, Product product)
         {
-            var existing = await GetByIdAsync(id);
-            if (existing == null) return null;
+            var existing = await _db.Products.FindAsync(id);
+
+            if (existing == null)
+                return null;
+
             existing.ProductName = product.ProductName;
             existing.ProductDescription = product.ProductDescription;
             existing.ProductPrice = product.ProductPrice;
             existing.IsAvailable = product.IsAvailable;
             existing.CatId = product.CatId;
+
             await _db.SaveChangesAsync();
-            return existing;
+
+            // Reload updated product with Category
+            return await _db.Products
+                .Include(p => p.Category)
+                .FirstOrDefaultAsync(p => p.ProductId == id);
         }
 
         public async Task<bool> DeleteAsync(int id)
         {
-            var existing = await GetByIdAsync(id);
-            if (existing == null) return false;
+            var existing = await _db.Products.FindAsync(id);
+
+            if (existing == null)
+                return false;
+
             _db.Products.Remove(existing);
             await _db.SaveChangesAsync();
+
             return true;
         }
 
-        public async Task<IEnumerable<Product>> GetByPriceAvailAsync(decimal price, bool avail) => await _db.Products.Where(p => p.ProductPrice >= price && p.IsAvailable == avail).ToListAsync();
+        public async Task<IEnumerable<Product>> GetByPriceAvailAsync(decimal price, bool avail)
+        {
+            return await _db.Products
+                .Include(p => p.Category)
+                .Where(p => p.ProductPrice >= price && p.IsAvailable == avail)
+                .ToListAsync();
+        }
+        public async Task<IEnumerable<Product>> GetByPriceAvailCategoryAsync(decimal price, bool avail, int catId)
+        {
+            return await _db.Products
+                .Include(p => p.Category)
+                .Where(p =>
+                    p.ProductPrice >= price &&
+                    p.IsAvailable == avail &&
+                    p.CatId == catId)
+                .ToListAsync();
+        }
 
-        public async Task<IEnumerable<Product>> GetByPriceAvailCategoryAsync(decimal price, bool avail, int catId) => await _db.Products.Where(p => p.ProductPrice >= price && p.IsAvailable == avail && p.CatId == catId).ToListAsync();
     }
 }
